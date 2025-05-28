@@ -1,0 +1,6 @@
+---
+- name: Setup VXLAN over WireGuard
+  hosts: wireguard
+  become: yes
+  roles:
+    - vxlanwg

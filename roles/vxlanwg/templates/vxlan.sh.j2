@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+
+VXLAN_IF="vxlan{{ vxlan_id }}"
+VXLAN_ID={{ vxlan_id }}
+WG_IF="wg0"
+VXLAN_IP="{{ vxlan_ip }}"
+PEER_WG_IP="{{ peer_wg_private_ip }}"
+
+# Logging for debugging
+echo "Creating VXLAN interface: $VXLAN_IF"
+echo "VXLAN ID: $VXLAN_ID"
+echo "WireGuard interface: $WG_IF"
+echo "VXLAN IP: $VXLAN_IP"
+echo "Peer WireGuard IP: $PEER_WG_IP"
+
+# Create VXLAN interface if not exists
+if ! ip link show $VXLAN_IF &>/dev/null; then
+  echo "Adding VXLAN interface $VXLAN_IF"
+  ip link add $VXLAN_IF type vxlan id $VXLAN_ID dev $WG_IF remote $PEER_WG_IP dstport 4789 || {
+    echo "Failed to create VXLAN interface: $VXLAN_IF"; exit 1;
+  }
+else
+  echo "VXLAN interface $VXLAN_IF already exists"
+fi
+
+# Assign IP address to VXLAN interface
+echo "Assigning IP $VXLAN_IP to $VXLAN_IF"
+ip addr add $VXLAN_IP/24 dev $VXLAN_IF || true
+
+# Bring up the VXLAN interface
+echo "Bringing up VXLAN interface $VXLAN_IF"
+ip link set up dev $VXLAN_IF
