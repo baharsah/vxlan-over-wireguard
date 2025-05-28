@@ -71,11 +71,40 @@
   command: bash /usr/local/sbin/vxlan.sh
 
 - name: Enable IP forwarding
+
   sysctl:
     name: net.ipv4.ip_forward
     value: '1'
     state: present
     reload: yes
+
+- name: Install UFW
+  apt:
+    name: ufw
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Allow VXLAN UDP 4789 only from WireGuard peer
+  ufw:
+    rule: allow
+    port: 4789
+    proto: udp
+    from_ip: '{{ peer_wg_private_ip }}'
+  when: ansible_os_family == 'Debian'
+
+- name: Deny VXLAN UDP 4789 from others
+  ufw:
+    rule: deny
+    port: 4789
+    proto: udp
+    from_ip: 'any'
+  when: ansible_os_family == 'Debian'
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    policy: allow
+  when: ansible_os_family == 'Debian'
 
 
 - name: Install netcat-openbsd as an alternative
@@ -85,10 +114,10 @@
   when: ansible_os_family == 'Debian'
 
 - name: Check VXLAN port connectivity to peer
-  command: nc -zvu {{ wg_private_ip }} 4789
+  command: nc -zvu {{ peer_wg_private_ip }} 4789
   register: nc_vxlan_result
   ignore_errors: yes
 
 - name: Display VXLAN port connectivity result
   debug:
-    msg: "VXLAN port connectivity to {{ wg_private_ip }}: {{ nc_vxlan_result.stdout }}"
+    msg: "VXLAN port connectivity to {{ peer_wg_private_ip }}: {{ nc_vxlan_result.stdout }}"
