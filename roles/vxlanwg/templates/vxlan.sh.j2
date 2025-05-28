@@ -25,6 +25,11 @@ else
 fi
 
 # Assign IP address to VXLAN interface
+# Generate and set random MAC address for VXLAN interface
+RANDOM_MAC=$(hexdump -n6 -e '/1 ":%02X"' /dev/urandom | sed 's/^://')
+echo "Setting random MAC address $RANDOM_MAC to $VXLAN_IF"
+ip link set dev $VXLAN_IF address $RANDOM_MAC
+
 echo "Assigning IP $VXLAN_IP to $VXLAN_IF"
 ip addr add $VXLAN_IP/24 dev $VXLAN_IF || true
 

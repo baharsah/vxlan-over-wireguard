@@ -85,7 +85,7 @@
   when: ansible_os_family == 'Debian'
 
 - name: Check VXLAN port connectivity to peer
-  command: nc -zv {{ wg_private_ip }} 4789
+  command: nc -zvu {{ wg_private_ip }} 4789
   register: nc_vxlan_result
   ignore_errors: yes
 
